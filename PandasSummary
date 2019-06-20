@@ -1,0 +1,834 @@
+Pandas: an open source library
+data structures
+data analysis tools
+Python: excellent capabilities
+data manipulation
+data preparation
+Python + Pandas:
+data analysis + data modeling tools
+entire workflow within Python
+
+Pandas provides:
+DataFrame object with integrated indexing
+Tools for reading and writing data between in-memory data structures and different formats: CSV and text files, Microsoft Excel, SQL databases, and the fast HDF5 format
+Intelligent data alignment and integrated handling of missing data
+Intelligent label-based slicing of large data sets
+SQL-like operations on data sets
+Time series-functionality:
+date range generation and frequency conversion
+moving window statistics
+moving window linear regressions
+date shifting and lagging
+
+"Pandas Overview"
+
+1. Object Creation
+--Basic series; default integer index
+my_series = pd.Series([1,3,5,np.nan,6,8])
+--datetime index
+my_dates_index = pd.date_range('20160101', periods=6)
+--sample NumPy data
+sample_numpy_data = np.array(np.arange(24)).reshape((6,4))
+--sample data frame, with column headers; uses our dates_index
+sample_df = pd.DataFrame(sample_numpy_data, index=my_dates_index, columns=list('ABCD'))
+--data frame from a Python dictionary
+df_from_dictionary = pd.DataFrame({ 
+                         'float' : 1.,
+                         'time' : pd.Timestamp('20160825'),
+                         'series' : pd.Series(1,index=list(range(4)),dtype='float32'),
+                         'array' : np.array([3] * 4,dtype='int32'),
+                         'categories' : pd.Categorical(["test","train","taxes","tools"]),
+                         'dull' : 'boring data' 
+                      })
+df_from_dictionary
+--pandas retains data type for each column
+df_from_dictionary.dtypes
+--head and tail; default is 5 rows
+sample_df.head()
+sample_df.tail(2)
+--underlying data: values, index and columns
+sample_df.values
+sample_df.index
+sample_df.columns
+--describe(): a quick statistical summary
+sample_df.describe()
+--control precision of floating point numbers
+pd.set_option('display.precision', 2)
+sample_df.describe()
+--transpose rows and columns
+sample_df.T
+--sort by axis
+sample_df.sort_index(axis=1, ascending=False)
+--sort by data within a column (our data was already sorted)
+sample_df.sort_values(by='B', ascending=False)
+
+2.Selection
+--create a dataframe with a numpy array
+sample_numpy_data = np.array(np.arange(24)).reshape((6,4))
+dates_index = pd.date_range('20160101', periods=6)
+sample_df = pd.DataFrame(sample_numpy_data, index=dates_index, columns=list('ABCD'))
+--selection using column name
+sample_df['C']
+--selection using slice
+sample_df[1:4]
+--selection using date time index
+sample_df['2016-01-01':'2016-01-04']
+--Selection by label, label-location based indexer for selection by label
+sample_df.loc[dates_index[1:3]]
+--Selecting using multi-axis by label
+sample_df.loc[:,['A','B']]
+--Label slicing, both endpoints are included
+sample_df.loc['2016-01-01':'2016-01-03',['A','B']]
+--Reduce number of dimensions for returned object, notice order of 'D' and 'B'
+sample_df.loc['2016-01-03',['D','B']]
+--Reduce number of dimensions for returned object, using result
+sample_df.loc['2016-01-03',['D','B']] [0] * 4
+--Reduce number of dimensions for returned object, select a scalar
+sample_df.loc[dates_index[2], 'C']
+--Selection by Position, integer-location based indexing for selection by position
+sample_numpy_data[3]
+sample_df.iloc[3]
+--Selection by Position, integer slices
+sample_df.iloc[1:3, 2:4]
+--Selection by Position, lists of integers
+sample_df.iloc[[0,1,3], [0,2]]
+--Selection by Position, slicing rows explicitly
+sample_df.iloc[1:3,:]
+--Selection by Position, slicing columns explicitly
+sample_df.iloc[:, 1:3]
+--Boolean Indexing
+ --test based upon one column's data
+sample_df.C >= 14
+ --test based upon entire data set
+sample_df[sample_df >= 11]
+--isin() method
+sample_df_2 = sample_df.copy()
+sample_df_2['Fruits'] = ['apple', 'orange','banana','strawberry','blueberry','pineapple']
+sample_df_2[sample_df_2['Fruits'].isin(['banana','pineapple', 'smoothy'])]
+
+3. Assignment Statements
+--create dataframe
+starting_date = '20160701'
+sample_numpy_data = np.array(np.arange(24)).reshape((6,4))
+dates_index = pd.date_range(starting_date, periods=6)
+sample_df = pd.DataFrame(sample_numpy_data, index=dates_index, columns=list('ABCD'))
+sample_df
+sample_df_2 = sample_df.copy()
+sample_df_2['Fruits'] = ['apple', 'orange','banana','strawberry','blueberry','pineapple']
+sample_df_2
+--Setting a new column automatically aligns the data by the indexes
+pd.date_range(starting_date, periods=6)
+pd.Series([1,2,3,4,5,6], index=pd.date_range(starting_date, periods=6))
+sample_series = pd.Series([1,2,3,4,5,6], index=pd.date_range(starting_date, periods=6))
+sample_df_2['Extra Data'] = sample_series *3 +1
+sample_df_2
+--Setting values by label
+sample_df_2.at[dates_index[3],'Fruits'] = 'pear'
+--Setting values by position, iat provides integer based lookups
+sample_df_2.iat[3,2] = 4444
+--Setting by assigning with a numpy array
+second_numpy_array = np.array(np.arange(len(sample_df_2)))  *100 + 7
+second_numpy_array
+sample_df_2['G'] = second_numpy_array
+sample_df_2
+
+4.Missing Data
+--create dataframe 
+browser_index = ['Firefox', 'Chrome', 'Safari', 'IE10', 'Konqueror']
+browser_df = pd.DataFrame({
+      'http_status': [200,200,404,404,301],
+      'response_time': [0.04, 0.02, 0.07, 0.08, 1.0]},
+       index=browser_index)
+browser_df
+--reindex() creates a copy (not a view)(the new index that without values will show NaN)
+new_index= ['Safari', 'Iceweasel', 'Comodo Dragon', 'IE10', 'Chrome']
+browser_df_2 = browser_df.reindex(new_index)
+browser_df_2
+--drop rows that have missing data
+browser_df_3 = browser_df_2.dropna(how='any')
+--fill-in missing data
+browser_df_2.fillna(value=-0.05555)
+--get boolean mask where values are nan
+pd.isnull(browser_df_2)
+--NaN propagates during arithmetic operations
+browser_df_2 * 17
+
+5.Operations
+--descriptive statistics
+pd.set_option('display.precision', 2)
+sample_df_2.describe()
+--column mean
+sample_df_2.mean()
+--row mean
+sample_df_2.mean(1)
+--apply (a function to a data frame)(the example is apply an accumulate sum function to the dataframe)
+sample_df_2.apply(np.cumsum, axis=0)
+--string methods
+s = pd.Series(['A', 'B', 'C', 'Aaba', 'Baca', np.nan, 'CABA', 'dog', 'cat'])
+s.str.lower()
+s.str.len()
+
+6.Merge(Concat,Join,Append)
+--concat() , separate data frame into a list with 3 elements
+pieces = [sample_df_2[:2], sample_df_2[2:4], sample_df_2[4:]]
+--concatenate first and last elements
+new_list = pieces[0], pieces[2]
+pd.concat(new_list)
+--append()
+new_last_row = sample_df_2.iloc[2]
+sample_df_2.append(new_last_row)
+--merge()(Merge DataFrame objects by performing a database-style join operation by columns or indexes.
+If joining columns on columns, the DataFrame indexes will be ignored. Otherwise if joining indexes on indexes or indexes on a column or columns, the index will be passed on.)
+left = pd.DataFrame({'my_key': ['K0', 'K1', 'K2', 'K3'],
+ 'A': ['A0', 'A1', 'A2', 'A3'],
+ 'B': ['B0', 'B1', 'B2', 'B3']})
+right = pd.DataFrame({'my_key': ['K0', 'K1', 'K2', 'K3'],
+ 'C': ['C0', 'C1', 'C2', 'C3'],
+ 'D': ['D0', 'D1', 'D2', 'D3']})
+result = pd.merge(left, right, on='my_key')
+
+7. Input and Output
+--read from an Excel file
+file_name_string = 'C:/Users/Charles Kelly/Desktop/Exercise Files/02_07/Final/EmployeesWithGrades.xlsx'
+employees_df = pd.read_excel(file_name_string, 'Sheet1', index_col=None, na_values=['NA'])
+--write to a comma separated value (.csv) file
+file_name_string_csv = 'C:/Users/Charles Kelly/Desktop/Exercise Files/02_07/Final/EmployeesWithGrades.csv'
+employees_df.to_csv(file_name_string_csv )
+
+8. Remote Data Access(Yahoo,St. Louis Fed (FRED),Google)
+--Installation Requirement(pandas-datareader is required; not included with default Anaconda installation (Summer 2016)
+from command prompt: conda install -c anaconda pandas-datareader
+documentation: https://anaconda.org/anaconda/pandas-datareader)
+%matplotlib inline
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime
+from pandas_datareader import data, wb
+--Yahoo finance
+start = datetime.datetime(2010, 1, 1)
+end = datetime.datetime(2016, 7, 15)
+yahoo_df = data.DataReader("F", 'yahoo', start, end)
+yahoo_df.plot()
+--FRED(source: http://quant-econ.net/py/pandas.html)
+start = datetime.datetime(2010, 1, 1)
+end = datetime.datetime(2016, 7, 15)
+unrate_df = data.DataReader('UNRATE', 'fred', start, end)
+unrate_df.plot()
+--Google
+start = datetime.datetime(2010, 1, 1)
+end = datetime.datetime(2016, 7, 15)
+google_df = data.DataReader("F", 'google', start, end)
+google_df.plot()
+google_series = pd.Series(google_df.index)
+
+9. Grouping
+--group by department
+file_name_string = 'C:/Users/Charles Kelly/Desktop/Exercise Files/02_07/Begin/EmployeesWithGrades.xlsx'
+employees_df = pd.read_excel(file_name_string, 'Sheet1', index_col=None, na_values=['NA'])
+employees_df.groupby('Department').sum()
+
+10. Categorical Data
+--create employees_df dataframe
+file_name_string = 'C:/Users/Charles Kelly/Desktop/Exercise Files/02_07/Begin/EmployeesWithGrades.xlsx'
+employees_df = pd.read_excel(file_name_string, 'Sheet1', index_col=None, na_values=['NA'])
+--Change data type
+employees_df["Grade"] = employees_df["Grade"].astype("category")
+--Rename the categories
+employees_df["Grade"].cat.categories = ["excellent", "good", "acceptable", "poor", "unacceptable"]
+--Values in data frame have not changed
+employees_df
+--group by
+employees_df.groupby('Grade').count()
+
+11. Time Series Resampling
+--create a date range to use as an index
+# min: minutes
+my_index = pd.date_range('9/1/2016', periods=9, freq='min')
+--create a time series that includes a simple pattern
+my_series = pd.Series(np.arange(9), index=my_index)
+--Downsample the series into 3 minute bins and sum the values of the timestamps falling into a bin
+my_series.resample('3min').sum()
+--Downsample the series into 3 minute bins as above, but label each bin using the right edge instead of the left
+--Notice the difference in the time indices; the sum in each bin is the same
+my_series.resample('3min', label='right').sum()
+--Downsample the series into 3 minute bins as above, but close the right side of the bin interval
+--"count backwards" from end of time series
+my_series.resample('3min', label='right', closed='right').sum()
+--Upsample the series into 30 second bins
+#select first 5 rows 
+my_series.resample('30S').asfreq()[0:5]
+--define a custom function to use with resampling
+def custom_arithmetic(array_like):
+    temp = 3 * np.sum(array_like) + 5
+    return temp
+--apply custom resampling function
+my_series.resample('3min').apply(custom_arithmetic) 
+
+"Series"
+
+1. Create Series
+--create series from Numpy array(number of labels in 'index' must be the same as the number of elements in array)
+my_simple_series = pd.Series(np.random.randn(5), index=['a', 'b', 'c', 'd', 'e'])
+my_simple_series
+my_simple_series.index
+--Create series from NumPy array, without explicit index
+my_simple_series = pd.Series(np.random.randn(5))
+my_simple_series
+--Access a series like a NumPy array
+my_simple_series[:3]
+--Create series from Python dictionary
+my_dictionary = {'a' : 45., 'b' : -19.5, 'c' : 4444}
+my_second_series = pd.Series(my_dictionary)
+my_second_series
+--Access a series like a dictionary
+my_second_series['b']
+--note order in display; same as order in "index"
+--note NaN
+pd.Series(my_dictionary, index=['b', 'c', 'd', 'a'])
+my_second_series.get('a')
+unknown = my_second_series.get('f')
+type(unknown)
+--Create series from scalar
+pd.Series(5., index=['a', 'b', 'c', 'd', 'e'])
+
+2.Vectorized Operations(not necessary to write loops for element-by-element operations
+pandas' Series objects can be passed to MOST NumPy functions)
+--create a serie
+my_dictionary = {'a' : 45., 'b' : -19.5, 'c' : 4444}
+my_series = pd.Series(my_dictionary)
+my_series
+--add series without loop(add the values but the original serie has no change)
+my_series + my_series
+--Series within arithmetic expression
+my_series + 5
+--Series used as argument to NumPy function
+np.exp(my_series)
+--A key difference between Series and ndarray is that operations between Series automatically align the data based on
+--label. Thus, you can write computations without giving consideration to whether the Series involved have the same labels.
+my_series[1:] + my_series[:-1]
+--Apply Python functions on an element-by-element basis
+def multiply_by_ten (input_element):
+    return input_element * 10.0
+my_series.map(multiply_by_ten)
+--Vectorized string methods
+series_of_strings = pd.Series(['A', 'B', 'C', 'Aaba', 'Baca', np.nan, 'CABA', 'dog', 'cat'])
+series_of_strings.str.lower()
+
+3. Date Arithmetic(common date arithmetic operations:calculate differences between date,generate sequences of dates and time spans
+convert time series to a particular frequency)
+import pandas as pd
+import numpy as np
+from datetime import datetime
+--Date, time, functions
+--to_datetime(*args, **kwargs)	Convert argument to datetime.	
+--to_timedelta(*args, **kwargs)	 Convert argument to timedelta	
+--date_range([start, end, periods, freq, tz, ...])  Return a fixed frequency datetime index, with day (calendar) as the default	
+--bdate_range([start, end, periods, freq, tz, ...])  Return a fixed frequency datetime index, with business day as the default	
+--period_range([start, end, periods, freq, name])  Return a fixed frequency datetime index, with day (calendar) as the default	
+--timedelta_range([start, end, periods, freq, ...])  Return a fixed frequency timedelta index, with day as the default	
+--infer_freq(index[, warn])  Infer the most likely frequency given the input index.
+--now()
+now = datetime.now()
+now
+now.year, now.month, now.day
+--delta(means the differences)
+delta = now - datetime(2001, 1, 1)
+delta
+delta.days
+--Parsing Timedelta, from string
+pd.Timedelta('4 days 7 hours')
+--Parsing Timedelta, named keyword arguments
+pd.Timedelta(days=1, seconds=1)
+--Parsing Timedelta, integers with a unit
+pd.Timedelta(1, unit='d')
+--create a range of dates from Timedelta
+us_memorial_day = datetime(2016, 5, 30)
+print(us_memorial_day)
+us_labor_day = datetime(2016, 9, 5)
+print(us_labor_day)
+us_summer_time = us_labor_day - us_memorial_day
+print(us_summer_time)
+type(us_summer_time)
+us_summer_time_range = pd.date_range(us_memorial_day, periods=us_summer_time.days, freq='D')
+--summer_time time series with random data
+us_summer_time_time_series = pd.Series(np.random.randn(us_summer_time.days), index=us_summer_time_range)
+us_summer_time_time_series.tail()
+
+"Data Frames and Panels"
+
+DataFrame is a 2-dimensional labeled data structure with columns of potentially different types. You can think of it like a spreadsheet or SQL table, or a dict of Series objects.
+You can create a data frame using:Dict of 1D ndarrays, lists, dicts, or Series; 2-D numpy.ndarray; Structured or record ndarray
+A Series; Another DataFrame
+
+1. creating data frames from various data types
+--create data frame from Python dictionary
+my_dictionary = {'a' : 45., 'b' : -19.5, 'c' : 4444}
+my_dictionary_df = pd.DataFrame(my_dictionary, index=['first', 'again'])
+my_dictionary_df
+--constructor without explicit index
+cookbook_df = pd.DataFrame({'AAA' : [4,5,6,7], 'BBB' : [10,20,30,40],'CCC' : [100,50,-30,-50]})
+cookbook_df
+--constructor contains dictionary with Series as values
+series_dict = {'one' : pd.Series([1., 2., 3.], index=['a', 'b', 'c']),
+               'two' : pd.Series([1., 2., 3., 4.], index=['a', 'b', 'c', 'd'])}
+series_df = pd.DataFrame(series_dict)
+series_df
+--dictionary of lists
+produce_dict = {'veggies': ['potatoes', 'onions', 'peppers', 'carrots'],
+                'fruits': ['apples', 'bananas', 'pineapple', 'berries']}
+produce_dict
+pd.DataFrame(produce_dict)
+--list of dictionaries
+data2 = [{'a': 1, 'b': 2}, {'a': 5, 'b': 10, 'c': 20}]
+pd.DataFrame(data2)
+--dictionary of tuples, with multi index
+pd.DataFrame({('a', 'b'): {('A', 'B'): 1, ('A', 'C'): 2},
+('a', 'a'): {('A', 'C'): 3, ('A', 'B'): 4},
+('a', 'c'): {('A', 'B'): 5, ('A', 'C'): 6},
+('b', 'a'): {('A', 'C'): 7, ('A', 'B'): 8},
+('b', 'b'): {('A', 'D'): 9, ('A', 'B'): 10}})
+result:
+		a	b
+a	b	c	a	b
+A	B	4.0	1.0	5.0	8.0	10.0
+C	3.0	2.0	6.0	7.0	NaN
+D	NaN	NaN	NaN	NaN	9.0
+
+2. Select Add and Delete
+--dictionary selection with string index
+cookbook_df = pd.DataFrame({'AAA' : [4,5,6,7], 'BBB' : [10,20,30,40],'CCC' : [100,50,-30,-50]})
+cookbook_df['BBB']
+--arithmetic vectorized operation using string indices
+cookbook_df['BBB'] * cookbook_df['CCC']
+--column deletion
+del cookbook_df['BBB']
+cookbook_df
+--column deletion 2
+last_column = cookbook_df.pop('CCC')
+last_column
+--add a new column using a Python list
+cookbook_df['DDD'] = [32, 21, 43, 'hike']
+cookbook_df
+--insert function
+cookbook_df.insert(1, "new column", [3,4,5,6])
+cookbook_df
+
+3. Indexing and Selection
+Operation	        Syntax	        Result
+Select column	        df[col]	        Series
+Select row by label	df.loc[label]	Series
+Select row by integer	df.iloc[loc]	Series
+Select rows	        df[start:stop]	DataFrame
+Select rows with boolean mask	df[mask]	DataFrame
+--creat a dataframe
+produce_dict = {'veggies': ['potatoes', 'onions', 'peppers', 'carrots'],'fruits': ['apples', 'bananas', 'pineapple', 'berries']}
+produce_df = pd.DataFrame(produce_dict)
+produce_df
+--selection using dictionary-like string
+produce_df['fruits']
+--list of strings as index (note: double square brackets)
+produce_df[ ['fruits', 'veggies'] ]
+--select row using integer index¶
+produce_df.iloc[2]
+--select rows using integer slice
+produce_df.iloc[0:2]
+-- + is over-loaded as concatenation operator
+produce_df + produce_df.iloc[0]
+--Data alignment and arithmetic(Data alignment between DataFrame objects automatically align on both the columns and the index 
+--(row labels).Note locations for 'NaN')
+df = pd.DataFrame(np.random.randn(10, 4), columns=['A', 'B', 'C', 'D'])
+df2 = pd.DataFrame(np.random.randn(7, 3), columns=['A', 'B', 'C'])
+sum_df = df + df2
+sum_df
+--Boolean indexing
+sum_df>0
+results show True or False
+sum_df[sum_df>0]
+#results show the values where it is True in sum_df
+--first select rows in column B whose values are less than zero
+--then, include information for all columns in that row in the resulting data set
+mask = sum_df['B'] < 0
+mask
+sum_df[mask]
+--isin function
+produce_df.isin(['apples', 'onions'])
+#results show True or false
+--where function
+produce_df.where(produce_df > 'k')
+#results only show the "True" data
+
+4. NumPy Universal Functions(If the data within a DataFrame are numeric, NumPy's universal functions can be used on/with the DataFrame.)
+df = pd.DataFrame(np.random.randn(10, 4), columns=['A', 'B', 'C', 'D'])
+df2 = pd.DataFrame(np.random.randn(7, 3), columns=['A', 'B', 'C'])
+sum_df = df + df2
+sum_df
+--NaN are handled correctly by universal function
+np.exp(sum_df)
+#if the original data is NaN, then the calculation part automaticly ignor that and shows NaN too.
+--Transpose availabe T attribute
+sum_df.T
+np.transpose(sum_df.values)
+#these two similar function, results of .T is still a dataframe and .transpose is a numpy array
+--dot method on DataFrame implements matrix multiplication
+A_df = pd.DataFrame(np.arange(15).reshape((3,5)))
+B_df = pd.DataFrame(np.arange(10).reshape((5,2)))
+A_df.dot(B_df)
+--dot method on Series implements dot product
+C_Series = pd.Series(np.arange(5,10))
+C_Series.dot(C_Series)
+
+5. create panels (A Panel is a three-dimensional analogue of DataFrame. Each item (the analogue of columns in a DataFrame) in a Panel is a DataFrame.)
+import pandas as pd
+import numpy as np
+import datetime
+from pandas_datareader import data, wb
+pd.set_eng_float_format(accuracy=2, use_eng_prefix=True)
+my_first_panel = pd.Panel(np.random.randn(2, 5, 4), 
+                          items=['Item01', 'Item02'],
+                          major_axis=pd.date_range('9/6/2016', periods=5),
+                          minor_axis=['A', 'B', 'C', 'D'])
+my_first_panel
+--From dict of DataFrame objects
+dictionary_of_data_frames = {'Item1' : pd.DataFrame(np.random.randn(4, 3)),
+                             'Item2' : pd.DataFrame(np.random.randn(4, 2))}
+my_dictionary_panel = pd.Panel(dictionary_of_data_frames)
+my_dictionary_panel
+--Panel.from_dict()
+--One helpful factory method is Panel.from_dict, which takes a dictionary of DataFrames, and has the following named parameters:
+--Parameter	Default	Description
+--intersect	False	drops elements whose indices do not align
+--orient	        items	use minor to use DataFrames’ columns as panel items
+--Orient is especially useful for mixed-type DataFrames. If you pass a dict of DataFrame objects with mixed-type columns, all of --the data will get upcasted to dtype=object unless you pass orient='minor'.
+oriented_panel = pd.Panel.from_dict(dictionary_of_data_frames, orient='minor')
+oriented_panel
+--Panels using remote stock data
+start = datetime.datetime(2010, 1, 1)
+end = datetime.datetime(2016, 7, 15)
+pdata = pd.Panel(dict((stk, data.DataReader("F", 'yahoo', start, end))
+for stk in ['AAPL', 'GOOG', 'MSFT', 'DELL']))
+pdata
+--swap axes: make the stocks the columns
+pdata = pdata.swapaxes('items', 'minor')
+pdata['Adj Close'].head()
+--NumPy ix generalizes to three dimensions
+pdata.ix[:, '7/12/2016', :]
+--convert Panel to DataFrame with multi-index
+stacked = pdata.ix[:, '6/30/2016':, :].to_frame()
+print(type(stacked))
+stacked
+--convert DataFrame with multi-index to a Panel
+stacked.to_panel()
+
+"Plotting"
+
+1. Inline plotting
+-- plot a random normalized 1000 spots
+%matplotlib inline
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+mu, sigma = 100, 15
+data_set = mu + sigma * np.random.randn(10000)
+# the histogram of the data
+n, bins, patches = plt.hist(data_set, 50, normed=1, facecolor='g', alpha=0.75)
+plt.xlabel('Smarts')
+plt.ylabel('Probability')
+plt.title('Histogram of IQ')
+plt.text(60, .025, r'$\mu=100,\ \sigma=15$')
+plt.axis([40, 160, 0, 0.03])
+plt.grid(True)
+plt.show()
+--Available Colors:
+code       color
+_______________________
+'k'         black
+'b'         blue
+'c'         cyan
+'g'         green
+'m'         magenta
+'r'         red
+'w'         white
+'y'         yellow
+--Available Markers:
+marker	description
+”.”	point
+”,”	pixel
+“o”	circle
+“v”	triangle_down
+“^”	triangle_up
+“<”	triangle_left
+“>”	triangle_right
+“1”	tri_down
+“2”	tri_up
+“3”	tri_left
+“4”	tri_right
+“8”	octagon
+“s”	square
+“p”	pentagon
+“*”	star
+“h”	hexagon1
+“H”	hexagon2
+“+”	plus
+“x”	x
+“D”	diamond
+“d”	thin_diamond
+“|”	vline
+“_”	hline
+TICKLEFT	tickleft
+TICKRIGHT	tickright
+TICKUP	tickup
+TICKDOWN	tickdown
+CARETLEFT	caretleft
+CARETRIGHT	caretright
+CARETUP	caretup
+CARETDOWN	caretdown
+“None”	nothing
+None	nothing
+” “	nothing
+“”	nothing
+'$...$'	render the string using mathtext.
+verts	a list of (x, y) pairs used for Path vertices. The center of the marker is located at (0,0) and the size is normalized.
+path	a Path instance.
+(numsides, style, angle)	see below
+
+2. Figures
+--Figures and Subplots
+--figure - container thats holds all elements of plot(s)
+--subplot - appears within a rectangular grid within a figure
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+my_first_figure = plt.figure("My First Figure")
+subplot_1 = my_first_figure.add_subplot(2, 3, 1)
+subplot_6 = my_first_figure.add_subplot(2, 3, 6)
+plt.plot(np.random.rand(50).cumsum(), 'k--')
+plt.show()
+subplot_2 = my_first_figure.add_subplot(2, 3, 2)
+plt.plot(np.random.rand(50), 'go')
+
+3. Multiples Lines, Single Plot
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+--random low and high temperature data
+data_set_size = 15
+low_mu, low_sigma = 50, 4.3
+low_data_set = low_mu + low_sigma * np.random.randn(data_set_size)
+high_mu, high_sigma = 57, 5.2
+high_data_set = high_mu + high_sigma * np.random.randn(data_set_size)
+days = list(range(1, data_set_size + 1))
+plt.plot(days, low_data_set)
+plt.show()
+plt.plot(days, low_data_set,         
+         days, high_data_set)
+plt.show()
+plt.plot(days, low_data_set,
+         days, low_data_set, "vm",
+         days, high_data_set, 
+         days, high_data_set, "^k")
+plt.show()
+plt.plot( 
+         days, high_data_set, "^k")
+plt.show()
+plt.plot(days, low_data_set,
+         days, low_data_set, "vm",
+         days, high_data_set, 
+         days, high_data_set, "^k")
+plt.xlabel('Day')
+plt.ylabel('Temperature: degrees Farenheit')
+plt.title('Randomized temperature data')
+plt.show()
+plt.plot(days, low_data_set,
+         
+         days, high_data_set
+         )
+plt.xlabel('Day')
+plt.ylabel('Temperature: degrees Farenheit')
+plt.title('Randomized temperature data')
+plt.show()
+plt.plot(
+         days, high_data_set, "^k")
+plt.xlabel('Day')
+plt.ylabel('Temperature: degrees Farenheit')
+plt.title('Randomized temperature data')
+plt.show()
+t1 = np.arange(0.0, 2.0, 0.1)
+t2 = np.arange(0.0, 2.0, 0.01)
+
+# note that plot returns a list of lines.  The "l1, = plot" usage
+# extracts the first element of the list into l1 using tuple
+# unpacking.  So l1 is a Line2D instance, not a sequence of lines
+l1, = plt.plot(t2, np.exp(-t2))
+l2, l3 = plt.plot(t2, np.sin(2 * np.pi * t2), '--go', t1, np.log(1 + t1), '.')
+l4, = plt.plot(t2, np.exp(-t2) * np.sin(2 * np.pi * t2), 'rs-.')
+
+plt.legend((l2, l4), ('oscillatory', 'damped'), loc='upper right', shadow=True)
+plt.xlabel('time')
+plt.ylabel('volts')
+plt.title('Damped oscillation')
+plt.show()
+
+4. Tick Marks, Labels, and Grids
+--
+number_of_data_points = 1000
+
+my_figure = plt.figure()
+subplot_1 = my_figure.add_subplot(1, 1, 1)
+my_data_set = np.random.rand(number_of_data_points).cumsum()
+subplot_1.plot(np.random.rand(number_of_data_points).cumsum())
+
+number_of_ticks = 5
+ticks = np.arange(0, number_of_data_points, number_of_data_points//number_of_ticks)
+subplot_1.set_xticks(ticks)
+
+labels = subplot_1.set_xticklabels(['one', 'two', 'three', 'four', 'five'], rotation=45, fontsize='small')
+
+subplot_1.set_title ("My First Ticked Plot")
+subplot_1.set_xlabel ("Groups")
+
+subplot_1.grid(True)
+gridlines = subplot_1.get_xgridlines() + subplot_1.get_ygridlines()
+for line in gridlines:
+    line.set_linestyle(':')
+
+plt.show()
+# Line styles for grid lines
+- solid line
+-- dashed line
+-. dash dot line
+: dotted
+
+5. Plot Annotations
+--
+number_of_data_points = 10
+my_figure = plt.figure()
+subplot_1 = my_figure.add_subplot(1, 1, 1)
+subplot_1.plot(np.random.rand(number_of_data_points).cumsum())
+
+subplot_1.text (1, 0.5, r'an equation: $E=mc^2$', fontsize=18, color='red')
+subplot_1.text (1, 1.5, "Hello, Mountain Climbing!", family='monospace', fontsize=14, color='green')
+
+# see: http://matplotlib.org/users/transforms_tutorial.html
+# transform=subplot_1.transAxes; entire axis between zero and one
+subplot_1.text(0.5, 0.5, "We are centered, now", transform=subplot_1.transAxes)
+
+subplot_1.annotate('shoot arrow', xy=(2, 1), xytext=(3, 4),
+            arrowprops=dict(facecolor='red', shrink=0.05))
+plt.show()
+
+x = np.arange(0, 10, 0.005)
+y = np.exp(-x/2.) * np.sin(2*np.pi*x)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.plot(x, y)
+ax.set_xlim(0, 10)
+ax.set_ylim(-1, 1)
+plt.show()
+
+x = np.arange(0, 10, 0.005)
+y = np.exp(-x/2.) * np.sin(2*np.pi*x)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.plot(x, y)
+ax.set_xlim(0, 10)
+ax.set_ylim(-1, 1)
+xdata, ydata = 5, 0
+xdisplay, ydisplay = ax.transData.transform_point((xdata, ydata))
+bbox = dict(boxstyle="round", fc="0.8")
+arrowprops = dict(
+    arrowstyle = "->",
+    connectionstyle = "angle,angleA=0,angleB=90,rad=10")
+offset = 72
+ax.annotate('data = (%.1f, %.1f)'%(xdata, ydata),
+            (xdata, ydata), xytext=(-2*offset, offset), textcoords='offset points',
+            bbox=bbox, arrowprops=arrowprops)
+disp = ax.annotate('display = (%.1f, %.1f)'%(xdisplay, ydisplay),
+            (xdisplay, ydisplay), xytext=(0.5*offset, -offset),
+            xycoords='figure pixels',
+            textcoords='offset points',
+            bbox=bbox, arrowprops=arrowprops)
+plt.show()
+
+fig = plt.figure()
+for i, label in enumerate(('A', 'B', 'C', 'D')):
+    ax = fig.add_subplot(2,2,i+1)
+    ax.text(0.05, 0.95, label, transform=ax.transAxes,
+      fontsize=16, fontweight='bold', va='top')
+plt.show()
+
+6. Data Frame Plots
+--The plot method on Series and DataFrame is just a simple wrapper around plt.plot()
+--If the index consists of dates, it calls gcf().autofmt_xdate() to try to format the x-axis nicely as show in the plot window.
+ts = pd.Series(np.random.randn(1000), index=pd.date_range('1/1/2000', periods=1000))
+ts = ts.cumsum()
+ts.plot()
+plt.show()   
+--On DataFrame, plot() is a convenience to plot all of the columns, and include a legend within the plot.
+df = pd.DataFrame(np.random.randn(1000, 4), index=pd.date_range('1/1/2016', periods=1000), columns=list('ABCD'))
+df = df.cumsum()
+plt.figure()
+df.plot()
+plt.show()
+--You can plot one column versus another using the x and y keywords in plot():
+df3 = pd.DataFrame(np.random.randn(1000, 2), columns=['B', 'C']).cumsum()
+df3['A'] = pd.Series(list(range(len(df))))
+df3.plot(x='A', y='B')
+plt.show()
+--Plots other than line plots
+--‘bar’ or ‘barh’ for bar plots
+--‘hist’ for histogram
+--‘box’ for boxplot
+--‘kde’ or 'density' for density plots
+--‘area’ for area plots
+--‘scatter’ for scatter plots
+--‘hexbin’ for hexagonal bin plots
+--‘pie’ for pie plots
+plt.figure()
+df.ix[5].plot(kind='bar')
+plt.axhline(0, color='k')
+plt.show()
+--stack bar chart
+df2 = pd.DataFrame(np.random.rand(10, 4), columns=['a', 'b', 'c', 'd'])
+df2.plot.bar(stacked=True)
+plt.show()
+--horizontal bar chart
+df2.plot.barh(stacked=True)
+plt.show()
+--box plot
+df = pd.DataFrame(np.random.rand(10, 5), columns=['A', 'B', 'C', 'D', 'E'])
+df.plot.box()
+plt.show()
+--area plot
+df = pd.DataFrame(np.random.rand(10, 4), columns=['a', 'b', 'c', 'd'])
+df.plot.area()
+plt.show()
+--Plotting with Missing Data
+Pandas tries to be pragmatic about plotting DataFrames or Series that contain missing data. Missing values are dropped, left out, or filled depending on the plot type.
+Plot Type	NaN Handling	
+Line	        Leave gaps at NaNs	
+Line (stacked)	Fill 0’s	
+Bar	        Fill 0’s	
+Scatter	        Drop NaNs	
+Histogram	Drop NaNs (column-wise)	
+Box	        Drop NaNs (column-wise)	
+Area	        Fill 0’s	
+KDE	        Drop NaNs (column-wise)	
+Hexbin	        Drop NaNs	
+Pie	        Fill 0’s
+If any of these defaults are not what you want, or if you want to be explicit about how missing values are handled, consider using fillna() or dropna() before plotting.
+--density plot
+ser = pd.Series(np.random.randn(1000))
+ser.plot.kde()
+plt.show()
+--lag plot
+--Lag plots are used to check if a data set or time series is random. Random data should not exhibit any structure in the lag 
+--plot. Non-random structure implies that the underlying data are not random.
+from pandas.tools.plotting import lag_plot
+plt.figure()
+data = pd.Series(0.1 * np.random.rand(1000) + 0.9 * np.sin(np.linspace(-99 * np.pi, 99 * np.pi, num=1000)))
+lag_plot(data)
+plt.show()
