@@ -1,0 +1,8 @@
+# use concat to merge two dataframes, df1 and df2 
+pd.concat([df1, df2], axis=1)
+
+# use merge to merge two dataframes, df1 and df2 
+pd.merge(df1, df2, left_index=True, right_index=True)
+
+# use join to merge two dataframes, df1 and df2 
+df1.join(df2)
