@@ -1,0 +1,28 @@
+# Apply a lambda function to each column by adding 10 to each value in each column of dataframe, df
+modDF = df.apply(lambda x : x+10)
+
+# Apply a lambda function to each row by adding 10 to each value in each column of dataframe, df
+modDF = df.apply(lambda x : x+10, axis=1)
+
+# Apply a user defined function with argument(=4) to each column
+def multipleData(x, y):
+  return x*y
+modDF = df.apply(multipleData, args=[4])
+
+# Apply a numpy function to get the sum of values in each column
+modDF = df.apply(np.sum)
+
+# Apply a user defined function to each column
+# The function is created with number of stars corresponding to each value of the column in the dataframe, df
+# The columns are inclued of points and country
+def stars(row):
+  if row.country == 'Canada':
+    return 3
+  elif row.points >= 95:
+    return 3
+  elif row.points >= 85:
+    return 2
+  else:
+    return 1
+    
+star_ratings = df.apply(stars, axis=1)
