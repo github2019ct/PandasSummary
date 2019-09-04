@@ -1,0 +1,4 @@
+if isinstance(star_ratings, pd.DataFrame):
+    print('True')
+else:
+    print('False')
